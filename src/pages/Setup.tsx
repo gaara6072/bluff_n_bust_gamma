@@ -4,11 +4,15 @@ import { useGame } from '../context/GameContext';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { InputAdornment } from '@mui/material';
 
 const SetupPage = () => {
-    const { addPlayer, startGame, resetGame } = useGame();
+    const { initializeGame, resetGame } = useGame();
     const [playerNames, setPlayerNames] = useState<string[]>(['', '', '']); // Start with 3 inputs
     const [word, setWord] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleNameChange = (index: number, value: string) => {
         const newNames = [...playerNames];
@@ -28,7 +32,6 @@ const SetupPage = () => {
     };
 
     const handleStart = () => {
-        debugger;
         const validNames = playerNames.filter(name => name.trim() !== '');
         if (validNames.length < 3) {
             alert('You need at least 3 players!');
@@ -40,8 +43,7 @@ const SetupPage = () => {
         }
 
         resetGame(); // Clear any previous state
-        validNames.forEach(name => addPlayer(name));
-        startGame(word);
+        initializeGame(validNames, word);
     };
 
     return (
@@ -71,7 +73,20 @@ const SetupPage = () => {
                         variant="outlined"
                         value={word}
                         onChange={(e) => setWord(e.target.value)}
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label="toggle password visibility"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        edge="end"
+                                    >
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
                         helperText="Don't let anyone see this!"
                     />
                 </Stack>

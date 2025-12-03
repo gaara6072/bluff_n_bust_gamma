@@ -25,6 +25,7 @@ interface GameContextType {
     submitVote: (voterId: string, votedForId: string) => void;
     resetGame: () => void;
     setGamePhase: (phase: GamePhase) => void;
+    initializeGame: (names: string[], word: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -46,12 +47,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     const [votedSuspectId, setVotedSuspectId] = useState<string | null>(null);
 
     const addPlayer = (name: string) => {
+        debugger;
         const newPlayer: Player = {
             id: crypto.randomUUID(),
             name,
             role: 'civilian', // Default, assigned later
         };
         setPlayers((prev) => [...prev, newPlayer]);
+        console.log(players);
     };
 
     const removePlayer = (id: string) => {
@@ -59,6 +62,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const startGame = (word: string) => {
+        debugger;
         if (players.length < 3) {
             alert('Need at least 3 players!');
             return;
@@ -103,6 +107,34 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         setCurrentPlayerIndex(0);
     };
 
+    const initializeGame = (names: string[], word: string) => {
+        if (names.length < 3) {
+            alert('Need at least 3 players!');
+            return;
+        }
+
+        // Create players
+        const newPlayers: Player[] = names.map(name => ({
+            id: crypto.randomUUID(),
+            name,
+            role: 'civilian',
+        }));
+
+        // Assign roles
+        const suspectIndex = Math.floor(Math.random() * newPlayers.length);
+        const updatedPlayers = newPlayers.map((p, index) => ({
+            ...p,
+            role: (index === suspectIndex ? 'suspect' : 'civilian') as Role,
+        }));
+
+        // Batch updates
+        setPlayers(updatedPlayers);
+        setSuspectId(updatedPlayers[suspectIndex].id);
+        setSecretWord(word);
+        setCurrentPlayerIndex(0);
+        setGamePhase('reveal');
+    };
+
     return (
         <GameContext.Provider
             value={{
@@ -120,6 +152,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                 submitVote,
                 resetGame,
                 setGamePhase,
+                initializeGame,
             }}
         >
             {children}
