@@ -26,6 +26,11 @@ interface GameContextType {
     resetGame: () => void;
     setGamePhase: (phase: GamePhase) => void;
     initializeGame: (names: string[], word: string) => void;
+    questionOrder: Player[];
+    currentQuestionerIndex: number;
+    nextQuestionTurn: () => void;
+    votes: Record<string, string>;
+    currentVoterIndex: number;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -45,6 +50,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     const [suspectId, setSuspectId] = useState<string | null>(null);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(0);
     const [votedSuspectId, setVotedSuspectId] = useState<string | null>(null);
+    const [questionOrder, setQuestionOrder] = useState<Player[]>([]);
+    const [currentQuestionerIndex, setCurrentQuestionerIndex] = useState<number>(0);
+    const [votes, setVotes] = useState<Record<string, string>>({});
+    const [currentVoterIndex, setCurrentVoterIndex] = useState<number>(0);
 
     const addPlayer = (name: string) => {
         debugger;
@@ -86,16 +95,57 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         if (currentPlayerIndex < players.length - 1) {
             setCurrentPlayerIndex((prev) => prev + 1);
         } else {
+            // Generate Hamiltonian cycle (random permutation)
+            const shuffled = [...players].sort(() => Math.random() - 0.5);
+            setQuestionOrder(shuffled);
+            setCurrentQuestionerIndex(0);
             setGamePhase('discuss');
         }
     };
 
+    const nextQuestionTurn = () => {
+        if (currentQuestionerIndex < questionOrder.length) {
+            setCurrentQuestionerIndex((prev) => prev + 1);
+        }
+    };
+
     const startVoting = () => {
+        setVotes({});
+        setCurrentVoterIndex(0);
         setGamePhase('vote');
     };
 
-    const submitVote = (_voterId: string, votedForId: string) => {
-        setVotedSuspectId(votedForId);
+    const submitVote = (voterId: string, votedForId: string) => {
+        const newVotes = { ...votes, [voterId]: votedForId };
+        setVotes(newVotes);
+
+        if (currentVoterIndex < players.length - 1) {
+            setCurrentVoterIndex((prev) => prev + 1);
+        } else {
+            // All votes cast, calculate result
+            const voteCounts: Record<string, number> = {};
+            Object.values(newVotes).forEach((id) => {
+                voteCounts[id] = (voteCounts[id] || 0) + 1;
+            });
+
+            let maxVotes = 0;
+            let winnerId: string | null = null;
+            let isTie = false;
+
+            Object.entries(voteCounts).forEach(([id, count]) => {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    winnerId = id;
+                    isTie = false;
+                } else if (count === maxVotes) {
+                    isTie = true;
+                }
+            });
+
+            // If tie, no one is ejected (or spy wins by default logic in Results)
+            setVotedSuspectId(isTie ? null : winnerId);
+            setGamePhase('results');
+        }
     };
 
     const resetGame = () => {
@@ -104,7 +154,13 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         setSecretWord('');
         setSuspectId(null);
         setVotedSuspectId(null);
+        setSuspectId(null);
+        setVotedSuspectId(null);
         setCurrentPlayerIndex(0);
+        setQuestionOrder([]);
+        setCurrentQuestionerIndex(0);
+        setVotes({});
+        setCurrentVoterIndex(0);
     };
 
     const initializeGame = (names: string[], word: string) => {
@@ -153,6 +209,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                 resetGame,
                 setGamePhase,
                 initializeGame,
+                questionOrder,
+                currentQuestionerIndex,
+                nextQuestionTurn,
+                votes,
+                currentVoterIndex,
             }}
         >
             {children}

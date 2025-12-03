@@ -1,85 +1,82 @@
-import { useState, useEffect } from 'react';
-import { Box, Button, Typography, CircularProgress, Stack } from '@mui/material';
+import { Box, Button, Typography, Stack } from '@mui/material';
 import { useGame } from '../context/GameContext';
 import HowToVoteIcon from '@mui/icons-material/HowToVote';
 
 const GameplayPage = () => {
-    const { startVoting } = useGame();
-    const [timeLeft, setTimeLeft] = useState(300); // 5 minutes default
+    const { startVoting, questionOrder, currentQuestionerIndex, nextQuestionTurn } = useGame();
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+    const isCycleComplete = currentQuestionerIndex >= questionOrder.length;
 
-        return () => clearInterval(timer);
-    }, []);
+    const getInstruction = () => {
+        if (isCycleComplete) {
+            return "Discussion finished! Time to vote.";
+        }
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        const asker = questionOrder[currentQuestionerIndex];
+        const answerer = questionOrder[(currentQuestionerIndex + 1) % questionOrder.length];
+
+        return (
+            <>
+                <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
+                    {asker.name}
+                </Typography>
+                <Typography variant="h5" sx={{ my: 2 }}>
+                    asks
+                </Typography>
+                <Typography variant="h4" color="secondary" sx={{ fontWeight: 'bold' }}>
+                    {answerer.name}
+                </Typography>
+            </>
+        );
     };
 
-    const progress = (timeLeft / 300) * 100;
-
     return (
-        <Stack spacing={6} alignItems="center" textAlign="center">
+        <Stack spacing={6} alignItems="center" textAlign="center" sx={{ height: '100%', justifyContent: 'center' }}>
             <Box>
                 <Typography variant="h3" gutterBottom sx={{ fontWeight: 800 }}>
-                    Discuss!
+                    {isCycleComplete ? "Ready to Vote?" : "Question Round"}
                 </Typography>
                 <Typography variant="h6" color="text.secondary">
-                    Ask questions and find the spy.
+                    {isCycleComplete
+                        ? "Everyone has asked and answered."
+                        : "Find the spy through your questions."}
                 </Typography>
             </Box>
 
-            <Box position="relative" display="inline-flex">
-                <CircularProgress
-                    variant="determinate"
-                    value={progress}
-                    size={200}
-                    thickness={2}
-                    sx={{
-                        color: timeLeft < 60 ? '#ff0055' : '#00e5ff',
-                        filter: 'drop-shadow(0 0 10px rgba(0, 229, 255, 0.3))'
-                    }}
-                />
-                <Box
-                    sx={{
-                        top: 0,
-                        left: 0,
-                        bottom: 0,
-                        right: 0,
-                        position: 'absolute',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
-                    <Typography variant="h3" component="div" color="text.primary" sx={{ fontWeight: 'bold' }}>
-                        {formatTime(timeLeft)}
-                    </Typography>
-                </Box>
+            <Box sx={{
+                p: 4,
+                borderRadius: 4,
+                bgcolor: 'background.paper',
+                boxShadow: 3,
+                width: '100%',
+                maxWidth: 400
+            }}>
+                {getInstruction()}
             </Box>
 
-            <Button
-                variant="contained"
-                color="secondary"
-                size="large"
-                startIcon={<HowToVoteIcon />}
-                onClick={startVoting}
-                fullWidth
-                sx={{ py: 2, fontSize: '1.2rem' }}
-            >
-                Vote Now
-            </Button>
+            {!isCycleComplete ? (
+                <Button
+                    variant="contained"
+                    size="large"
+                    onClick={nextQuestionTurn}
+                    fullWidth
+                    sx={{ py: 2, fontSize: '1.2rem' }}
+                >
+                    Next Question
+                </Button>
+            ) : (
+                <Button
+                    variant="contained"
+                    color="secondary"
+                    size="large"
+                    startIcon={<HowToVoteIcon />}
+                    onClick={startVoting}
+                    fullWidth
+                    sx={{ py: 2, fontSize: '1.2rem' }}
+                >
+                    Vote Now
+                </Button>
+            )}
         </Stack>
     );
 };
