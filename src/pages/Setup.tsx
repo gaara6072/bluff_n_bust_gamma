@@ -1,18 +1,17 @@
 import { useState } from 'react';
-import { Box, Button, TextField, Typography, IconButton, Paper, Stack } from '@mui/material';
+import { Box, Button, TextField, Typography, IconButton, Paper, Stack, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import { useGame } from '../context/GameContext';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { InputAdornment } from '@mui/material';
+import { categories } from '../data/categories';
 
 const SetupPage = () => {
-    const { initializeGame, resetGame } = useGame();
-    const [playerNames, setPlayerNames] = useState<string[]>(['', '', '']); // Start with 3 inputs
-    const [word, setWord] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
+    const { initializeGame, resetGame, players } = useGame();
+    const [playerNames, setPlayerNames] = useState<string[]>(
+        players.length > 0 ? players.map(p => p.name) : ['', '', '']
+    ); // Start with 3 inputs or existing players
+    const [selectedCategory, setSelectedCategory] = useState<keyof typeof categories | 'Random'>('Food');
 
     const handleNameChange = (index: number, value: string) => {
         const newNames = [...playerNames];
@@ -37,13 +36,18 @@ const SetupPage = () => {
             alert('You need at least 3 players!');
             return;
         }
-        if (!word.trim()) {
-            alert('Please enter a secret word!');
-            return;
+
+        let categoryWords: string[] = [];
+        if (selectedCategory === 'Random') {
+            categoryWords = Object.values(categories).flat();
+        } else {
+            categoryWords = categories[selectedCategory];
         }
 
+        const randomWord = categoryWords[Math.floor(Math.random() * categoryWords.length)];
+
         resetGame(); // Clear any previous state
-        initializeGame(validNames, word);
+        initializeGame(validNames, randomWord);
     };
 
     return (
@@ -66,29 +70,23 @@ const SetupPage = () => {
 
             <Paper elevation={0} sx={{ p: 3 }}>
                 <Stack spacing={3}>
-                    <Typography variant="h6">Secret Word</Typography>
-                    <TextField
-                        fullWidth
-                        label="Enter the Secret Word"
-                        variant="outlined"
-                        value={word}
-                        onChange={(e) => setWord(e.target.value)}
-                        type={showPassword ? 'text' : 'password'}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        aria-label="toggle password visibility"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        edge="end"
-                                    >
-                                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                        }}
-                        helperText="Don't let anyone see this!"
-                    />
+                    <Typography variant="h6">Game Settings</Typography>
+                    <FormControl fullWidth>
+                        <InputLabel id="category-select-label">Category</InputLabel>
+                        <Select
+                            labelId="category-select-label"
+                            value={selectedCategory}
+                            label="Category"
+                            onChange={(e) => setSelectedCategory(e.target.value as keyof typeof categories | 'Random')}
+                        >
+                            {Object.keys(categories).map((cat) => (
+                                <MenuItem key={cat} value={cat}>
+                                    {cat}
+                                </MenuItem>
+                            ))}
+                            <MenuItem value="Random">Random</MenuItem>
+                        </Select>
+                    </FormControl>
                 </Stack>
             </Paper>
 

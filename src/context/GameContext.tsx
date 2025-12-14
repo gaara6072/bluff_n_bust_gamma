@@ -31,6 +31,7 @@ interface GameContextType {
     nextQuestionTurn: () => void;
     votes: Record<string, string>;
     currentVoterIndex: number;
+    startNewRound: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -149,7 +150,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const resetGame = () => {
-        setPlayers([]);
+        // setPlayers([]); // Keep players for next round
         setGamePhase('setup');
         setSecretWord('');
         setSuspectId(null);
@@ -161,6 +162,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         setCurrentQuestionerIndex(0);
         setVotes({});
         setCurrentVoterIndex(0);
+    };
+
+    const startNewRound = () => {
+        const shuffled = [...players].sort(() => Math.random() - 0.5);
+        setQuestionOrder(shuffled);
+        setCurrentQuestionerIndex(0);
     };
 
     const initializeGame = (names: string[], word: string) => {
@@ -214,6 +221,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
                 nextQuestionTurn,
                 votes,
                 currentVoterIndex,
+                startNewRound,
             }}
         >
             {children}

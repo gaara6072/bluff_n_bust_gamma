@@ -3,7 +3,7 @@ import { useGame } from '../context/GameContext';
 import HowToVoteIcon from '@mui/icons-material/HowToVote';
 
 const GameplayPage = () => {
-    const { startVoting, questionOrder, currentQuestionerIndex, nextQuestionTurn } = useGame();
+    const { startVoting, questionOrder, currentQuestionerIndex, nextQuestionTurn, startNewRound } = useGame();
 
     const isCycleComplete = currentQuestionerIndex >= questionOrder.length;
 
@@ -65,17 +65,29 @@ const GameplayPage = () => {
                     Next Question
                 </Button>
             ) : (
-                <Button
-                    variant="contained"
-                    color="secondary"
-                    size="large"
-                    startIcon={<HowToVoteIcon />}
-                    onClick={startVoting}
-                    fullWidth
-                    sx={{ py: 2, fontSize: '1.2rem' }}
-                >
-                    Vote Now
-                </Button>
+                <Stack spacing={2} width="100%">
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        size="large"
+                        onClick={startNewRound}
+                        fullWidth
+                        sx={{ py: 2, fontSize: '1.2rem' }}
+                    >
+                        One More Round
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        size="large"
+                        startIcon={<HowToVoteIcon />}
+                        onClick={startVoting}
+                        fullWidth
+                        sx={{ py: 2, fontSize: '1.2rem' }}
+                    >
+                        Vote Now
+                    </Button>
+                </Stack>
             )}
         </Stack>
     );
